@@ -104,9 +104,41 @@ contract('SchnorrSECP256K1', async accounts => {
         assert.isBelow(gasUsed, 37500, 'burns too much gas')
     })
 
-    it('Accepts the signatures generated on the go side', async () => {
+    it('Accepts the OLD signatures generated on the go side', async () => {
         const tests = require('./testsOld')
-        const dssTest = require('./dssTest')
+        const dssTest = require('./dssTestOld')
+        tests.push(dssTest)
+        for (let i = 0; i < Math.min(1, tests.length); i++) {
+            const numbers = tests[i].slice(0, tests[i].length - 1)
+            const [msgHash, secret, pX, pY, sig] = numbers.map(hexToBN)
+            const rEIP55Address = web3.utils.toChecksumAddress(tests[i].pop())
+            secret.and(bigOne) // shut linter up about unused variable
+            assert(
+                await c.verifySignature.call(
+                    pX,
+                    pY.isEven() ? 0 : 1,
+                    sig,
+                    msgHash,
+                    rEIP55Address
+                ),
+                'failed to verify OLD signature constructed by golang tests'
+            )
+            assert(
+                !(await c.verifySignature.call(
+                    pX,
+                    pY.isEven() ? 0 : 1,
+                    sig.add(bigOne),
+                    msgHash,
+                    rEIP55Address
+                )),
+                'failed to reject bad signature'
+            )
+        }
+    })
+
+    it('Accepts the signatures NEW generated on the go side', async () => {
+        const tests = require('./testsNew')
+        const dssTest = require('./dsstestNew')
         tests.push(dssTest)
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i].slice(0, tests[i].length - 1)
@@ -135,4 +167,5 @@ contract('SchnorrSECP256K1', async accounts => {
             )
         }
     })
+
 })

@@ -19,7 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink/core/services/signatures/secp256k1"
 )
 
-var numSignatures = 5
+var numSignatures = 7
 
 var randomStream = cryptotest.NewStream(&testing.T{}, 0)
 
