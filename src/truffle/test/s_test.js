@@ -71,6 +71,8 @@ contract('SchnorrSECP256K1', async accounts => {
             toHex(kTimesGAddress, 160)
         )
     )
+    const s = k.sub(e.mul(secretKey)).umod(groupOrder) // s ≡ k - e*secretKey mod groupOrder
+
     it('Knows a good Schnorr signature from bad', async () => {
         assert(
             publicKey[0].lt(groupOrder.shrn(1).add(bigOne)),
