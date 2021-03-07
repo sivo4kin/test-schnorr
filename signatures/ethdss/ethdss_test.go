@@ -168,7 +168,7 @@ func printTest(t *testing.T, msg *big.Int, public kyber.Point, signature ethschn
 		msg,
 		signature.CommitmentPublicAddress,
 		fname)
-	err := ioutil.WriteFile("../../../truffle/test/"+fname+".js", []byte(qwe), 777)
+	err := ioutil.WriteFile("../../files/"+fname+".js", []byte(qwe), 777)
 	if err != nil {
 		// handle error
 	}

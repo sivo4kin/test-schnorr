@@ -73,7 +73,7 @@ contract('SchnorrSECP256K1', async accounts => {
     )
     const s = k.sub(e.mul(secretKey)).umod(groupOrder) // s ≡ k - e*secretKey mod groupOrder
 
-    it.skip('Knows a good Schnorr signature from bad', async () => {
+    it('Knows a good Schnorr signature from bad', async () => {
         assert(
             publicKey[0].lt(groupOrder.shrn(1).add(bigOne)),
             'x ordinate of public key must be less than half group order.'
@@ -101,9 +101,9 @@ contract('SchnorrSECP256K1', async accounts => {
         assert.isBelow(gasUsed, 37500, 'burns too much gas')
     })
 
-    it.skip('Accepts the OLD MIXED signatures generated on the go side', async () => {
-        const tests = require('./testsOld')
-        const dssTest = require('./dssTestOld')
+    it('Accepts the OLD MIXED signatures generated on the go side', async () => {
+        const tests = require('../../files/testsOld')
+        const dssTest = require('../../files/dssTestOld')
         tests.push(dssTest)
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i].slice(0, tests[i].length - 1)
@@ -135,7 +135,7 @@ contract('SchnorrSECP256K1', async accounts => {
     })
 
     it('ethdss_test GROUP generated on golang', async () => {
-        const tests = require('./ethdss_test')
+        const tests = require('../../files/ethdss_test')
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i]
             /*
@@ -179,15 +179,16 @@ contract('SchnorrSECP256K1', async accounts => {
 
 
 
-    it.skip('Accepts the signatures NEW generated on the go side', async () => {
-        const tests = require('./testsNew')
-        const dssTest = require('./dsstestNew')
-        tests.push(dssTest)
+    it('ethschnorr_test signatures NEW generated on the go side', async () => {
+        const tests = require('../../files/ethschnorr_test')
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i].slice(0, tests[i].length - 1)
-            const [msgHash, secret, pX, pY, sig] = numbers.map(hexToBN)
-            const rEIP55Address = web3.utils.toChecksumAddress(tests[i].pop())
-            secret.and(bigOne) // shut linter up about unused variable
+            const [pX, pY, sig, msgHash, nonceTimesGeneratorAddress ] = numbers.map(hexToBN)
+            let addr = tests[i].pop()
+            // log("nonceTimesGeneratorAddress", nonceTimesGeneratorAddress ,"\n",
+            //     addr
+            // )
+            const rEIP55Address = web3.utils.toChecksumAddress(addr)
             assert(
                 await c.verifySignature.call(
                     pX,

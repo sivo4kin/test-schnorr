@@ -1,16 +1,12 @@
 # test-schnorr
 
+- genereate scchnorr signature using go.dedis.ch/kyber
+- check signature in smart contract sving some gas
 
 
-test generate schnorr signatires from go
 ````
-cd src/go/signatures/ethschnorr
-go test
+make
 ````
-verify signature from sol
-````
-cd src/truffle
-truffle test
-````
+
 
 
