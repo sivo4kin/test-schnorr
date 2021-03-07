@@ -11,6 +11,7 @@ test:
 deps:
 	$(GOGET) "github.com/ethereum/go-ethereum"
 	$(GOGET) "github.com/pkg/errors@v0.9.1"
+	cd truffle && npm i
 truffle_test:
 	cd truffle && npx truffle test
 clean:
