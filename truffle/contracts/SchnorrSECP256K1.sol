@@ -88,8 +88,8 @@ contract SchnorrSECP256K1 {
       has no natural relationship to the order of the curve's cyclic group.
       **************************************************************************
       @param signingPubKeyX is the x ordinate of the public key. This must be
-             less than HALF_Q. 
-      @param pubKeyYParity is 0 if the y ordinate of the public key is even, 1 
+             less than HALF_Q.
+      @param pubKeyYParity is 0 if the y ordinate of the public key is even, 1
              if it's odd.
       @param signature is the actual signature, described as s in the above
              instructions.
@@ -104,7 +104,8 @@ contract SchnorrSECP256K1 {
     uint256 signature,
     uint256 msgHash,
     address nonceTimesGeneratorAddress) external pure returns (bool) {
-    require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+    //TODO if this require needed ?
+    //    require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
     // Avoid signature malleability from multiple representations for ℤ/Qℤ elts
     require(signature < Q, "signature must be reduced modulo Q");
 
