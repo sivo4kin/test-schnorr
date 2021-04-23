@@ -167,6 +167,39 @@ contract('SchnorrSECP256K1', async accounts => {
         }
     })
 
+    it('Should verify ethschnorr_test signatures', async () => {
+        const tests = require('../../files/ethschnorr_test')
+        for (let i = 0; i < Math.min(1, tests.length); i++) {
+            const numbers = tests[i].slice(0, tests[i].length - 1)
+            const [pX, pY, sig, msgHash, nonceTimesGeneratorAddress ] = numbers.map(hexToBN)
+            let addr = tests[i][tests[i].length-1]
+            // log("nonceTimesGeneratorAddress", nonceTimesGeneratorAddress ,"\n",
+            //     addr
+            // )
+            const rEIP55Address = web3.utils.toChecksumAddress(addr)
+            assert(
+                await c.verifySignature.call(
+                    pX,
+                    pY.isEven() ? 0 : 1,
+                    sig,
+                    msgHash,
+                    rEIP55Address
+                ),
+                'failed to verify signature constructed by golang tests'
+            )
+            assert(
+                !(await c.verifySignature.call(
+                    pX,
+                    pY.isEven() ? 0 : 1,
+                    sig.add(bigOne),
+                    msgHash,
+                    rEIP55Address
+                )),
+                'failed to reject bad signature'
+            )
+        }
+    })
+
 
     it('Should verify mixed signatures', async () => {
         let testsNew = require('../../files/ethschnorr_test')
@@ -175,7 +208,7 @@ contract('SchnorrSECP256K1', async accounts => {
         for (let i = 0; i < Math.min(1, testsNew.length); i++) {
             const numbersNew = testsNew[i].slice(0, testsNew[i].length - 1)
             const [pX, pY, sig, msgHash, nonceTimesGeneratorAddress ] = numbersNew.map(hexToBN)
-            let addrNew = testsNew[i].pop()
+            let addrNew = testsNew[i][testsNew[i].length-1]
             log("nonceTimesGeneratorAddress", nonceTimesGeneratorAddress ,"\n",
                 addrNew
             )
