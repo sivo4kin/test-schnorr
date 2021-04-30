@@ -12,6 +12,8 @@ go_test:
 test: go_test truffle_test
 
 deps: npm
+	go mod tidy
+	go mod download
 	$(GOGET) "github.com/ethereum/go-ethereum"
 	$(GOGET) "github.com/pkg/errors@v0.9.1"
 

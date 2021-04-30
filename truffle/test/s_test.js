@@ -200,7 +200,13 @@ contract('SchnorrSECP256K1', async accounts => {
         }
     })
 
-
+/*
+        pX,
+		pY,
+		signature.Signature,
+		msg,
+		signature.CommitmentPublicAddress
+* */
     it('Should verify mixed signatures', async () => {
         let testsNew = require('../../files/ethschnorr_test')
         let dssTest = require('../../files/ethdss_test')

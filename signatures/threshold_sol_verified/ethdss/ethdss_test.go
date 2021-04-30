@@ -145,9 +145,6 @@ var printTests = true
 
 func printTest(t *testing.T, msg *big.Int, public kyber.Point, signature ethschnorr.Signature) {
 	pX, pY := secp256k1.Coordinates(public)
-	//fmt.Printf("  ['%064x',\n   '%064x',\n   '%064x',\n   '%064x',\n   '%040x'],\n",
-	//	msg, pX, pY, signature.Signature,
-	//	signature.CommitmentPublicAddress)
 	/*
 	   function verifySignature(
 	     uint256 signingPubKeyX,
@@ -156,7 +153,6 @@ func printTest(t *testing.T, msg *big.Int, public kyber.Point, signature ethschn
 	     uint256 msgHash,
 	     address nonceTimesGeneratorAddress)
 	*/
-
 	_, file, _, _ := runtime.Caller(0)
 	fname := path.Base(file)
 	fname = fname[:len(fname)-3]
@@ -168,11 +164,8 @@ func printTest(t *testing.T, msg *big.Int, public kyber.Point, signature ethschn
 		msg,
 		signature.CommitmentPublicAddress,
 		fname)
-	err := ioutil.WriteFile("../../files/"+fname+".js", []byte(qwe), 777)
-	if err != nil {
-		// handle error
-	}
-
+	_ = ioutil.WriteFile("../../files/"+fname+".js", []byte(qwe), 777)
+	//require.Nil(t, err)
 }
 
 func TestDSSSignature(t *testing.T) {
