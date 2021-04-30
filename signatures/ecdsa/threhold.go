@@ -1,7 +1,7 @@
 // Copyright 2017, Yahoo Holdings Inc.
 // Licensed under the terms of the Apache license. See LICENSE file in project root for terms.
 
-package threshold
+package ecdsa
 
 import (
 	gocrypto "crypto"
