@@ -104,7 +104,7 @@ contract SchnorrSECP256K1 {
     uint256 signature,
     uint256 msgHash,
     address nonceTimesGeneratorAddress) external pure returns (bool) {
-        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+//        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
     // Avoid signature malleability from multiple representations for ℤ/Qℤ elts
     require(signature < Q, "signature must be reduced modulo Q");
 
