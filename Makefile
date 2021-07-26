@@ -1,21 +1,25 @@
+SRC=./src
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 
+PHONY: deps
+
 all: deps clean test
 
 go_test:
-	$(GOTEST) -v ./signatures/...
+	$(GOTEST) -v $(SRC)...
 
 test: go_test hh_test
 
-deps: npm
-	go mod tidy
-	go mod download
-	$(GOGET) "github.com/ethereum/go-ethereum"
-	$(GOGET) "github.com/pkg/errors@v0.9.1"
+yarn:
+	cd eth-contracts;yarn;
+go:
+	cd $SRC;go mod tidy;go mod download;$(GOGET) "github.com/ethereum/go-ethereum";$(GOGET) "github.com/pkg/errors@v0.9.1"
+
+deps: yarn go
 
 hh_test:
 	cd eth-contracts && npx hardhat test
