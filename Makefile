@@ -7,9 +7,9 @@ GOGET=$(GOCMD) get
 all: deps clean test
 
 go_test:
-	$(GOTEST) -v ./...
+	$(GOTEST) -v ./signatures/...
 
-test: go_test truffle_test
+test: go_test hh_test
 
 deps: npm
 	go mod tidy
@@ -17,10 +17,10 @@ deps: npm
 	$(GOGET) "github.com/ethereum/go-ethereum"
 	$(GOGET) "github.com/pkg/errors@v0.9.1"
 
-truffle_test:
-	cd truffle && npx truffle test
+hh_test:
+	cd eth-contracts && npx hardhat test
 clean:
-	rm -rf files/*_test.js
+	rm -rf test_data/*_test.js
 
 npm:
 	@if [ -d truffle/node_modules ]; then \

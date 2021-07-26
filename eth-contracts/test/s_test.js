@@ -1,28 +1,28 @@
-const log        = console.log;
-
-const SchnorrSECP256K1 = artifacts.require('SchnorrSECP256K1.sol')
-
-let SchnorrSECP256K1_deployed = async () => {
-    return SchnorrSECP256K1.deployed();
-}
-
-// let s = "qwerty";
-
+const { expect, chai } = require("chai");
+const web3 = require("web3");
 const BN = web3.utils.BN
+
+const log = console.log;
+var exp = ethers.BigNumber.from("10").pow(18);
+
 const hexToBN = s => new BN(s.replace(/^0[xX]/, ''), 16) // Construct BN from hex
+const hexToStr = s => s.replace(/^0[xX]/, '')
+
+
 const groupOrder = hexToBN(
     // Number of points in secp256k1
     '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141'
 )
-const bigOne = new BN(1)
+const gasUsage = new BN(1e6)
 
 // Returns d as a 0x-hex string, left-padded with zeros to l bits.
 const toHex = (d, l) =>
     // Make sure there's just one 0x prefix
     web3.utils.padLeft(d.toString(16), l / 4).replace(/^(0[xX])*/, '0x')
 
-const bottom160bits = bigOne.shln(160).sub(bigOne)
-const bottom256bits = bigOne.shln(257).sub(bigOne)
+const bottom160bits = gasUsage.shln(160).sub(gasUsage)
+const bottom256bits = gasUsage.shln(257).sub(gasUsage)
+
 
 // Returns the EIP55-capitalized ethereum address for this secp256k1 public key
 const toAddress = (x, y) => {
@@ -30,15 +30,9 @@ const toAddress = (x, y) => {
     return web3.utils.toChecksumAddress(k256.slice(k256.length - 40))
 }
 
+describe("SchnorrSECP256K1", async function () {
+    // let schnorrSECP256K1;
 
-
-
-
-contract('SchnorrSECP256K1', async accounts => {
-    let c
-    beforeEach(async () => {
-        c = await SchnorrSECP256K1.new()
-    })
     // log("SchnorrSECP256K1 address", c);
     const secretKey = hexToBN(
         // Uniformly sampled from {0,...,groupOrder}
@@ -73,102 +67,116 @@ contract('SchnorrSECP256K1', async accounts => {
     )
     const s = k.sub(e.mul(secretKey)).umod(groupOrder) // s ≡ k - e*secretKey mod groupOrder
 
-   it('Knows a good Schnorr signature from bad', async () => {
-        assert(
-            publicKey[0].lt(groupOrder.shrn(1).add(bigOne)),
-            'x ordinate of public key must be less than half group order.'
-        )
-        const checkSignature = async s =>
-            c.verifySignature.call(
-                publicKey[0],
-                pubKeyYParity,
-                s,
-                msgHash,
-                kTimesGAddress
-            )
-        assert(await checkSignature(s), 'failed to verify good signature')
-        assert(
-            !(await checkSignature(s.add(bigOne))), // Corrupt signature for
-            'failed to reject bad signature' //     // positive control
-        )
-        const gasUsed = await c.verifySignature.estimateGas(
-            publicKey[0],
-            pubKeyYParity,
-            s,
-            msgHash,
-            kTimesGAddress
-        )
-        assert.isBelow(gasUsed, 37500, 'burns too much gas')
+    beforeEach(async () => {
+        const SchnorrSECP256K1 = await ethers.getContractFactory("SchnorrSECP256K1");
+        schnorrSECP256K1 = await SchnorrSECP256K1.deploy();
+        await schnorrSECP256K1.deployed();
     })
 
+   it('Knows a good Schnorr signature from bad', async () => {
+       expect(
+            publicKey[0].lt(groupOrder.shrn(1).add(gasUsage))).to.equal(true
+            // 'x ordinate of public key must be less than half group order.'
+        );
+
+       console.log(
+           "\n pubKey", publicKey[0].toString(),
+           "\n pubKeyYParity", pubKeyYParity.toString(),
+           "\n signature", s.toString(),
+           "\n msgHash", msgHash.toString(),
+           "\n kTimesGAddress", kTimesGAddress.toLocaleUpperCase()
+       )
+
+       const checkSignature = async s =>
+           schnorrSECP256K1.verifySignature.call(
+               gasUsage,
+               publicKey[0].toString(),
+               pubKeyYParity.toString(),
+               s.toString(),
+               msgHash.toString(),
+               kTimesGAddress)
+
+
+       expect(await checkSignature(s)).to.equal(true, 'failed to verify good signature')
+
+       expect(!(await checkSignature(s.add(gasUsage)))).to.equal( true, 'failed to reject bad signature')
+
+       let gasUsed = await schnorrSECP256K1.estimateGas.verifySignature(
+            publicKey[0].toString(),
+            pubKeyYParity.toString(),
+            s.toString(),
+            msgHash.toString(),
+            kTimesGAddress)
+       console.log(gasUsed.toString())
+   })
+
    it('Accepts the OLD MIXED signatures generated on the go side', async () => {
-        const tests = require('../../files/testsOld')
-        const dssTest = require('../../files/dssTestOld')
+        const tests = require('../../test_data/testsOld')
+        const dssTest = require('../../test_data/dssTestOld')
         tests.push(dssTest)
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i].slice(0, tests[i].length - 1)
             const [msgHash, secret, pX, pY, sig] = numbers.map(hexToBN)
-            // log("----", msgHash, secret, pX, pY, sig)
             const rEIP55Address = web3.utils.toChecksumAddress(tests[i].pop())
-            secret.and(bigOne) // shut linter up about unused variable
-            assert(
-                await c.verifySignature.call(
-                    pX,
+            expect(
+                await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig,
-                    msgHash,
+                    sig.toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                ),
-                'failed to verify  OLD MIXED signature constructed by golang tests'
+                )).to.equal(true,
+                'failed to verify signature constructed by golang tests'
             )
-            assert(
-                !(await c.verifySignature.call(
-                    pX,
+            expect(
+                !await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig.add(bigOne),
-                    msgHash,
+                    sig.add(gasUsage).toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                )),
+                )).to.equal(true,
                 'failed to reject bad signature'
             )
         }
     })
 
    it('Shuld verify ethdss_test signatutre', async () => {
-        const tests = require('../../files/ethdss_test')
+        const tests = require('../../test_data/ethdss_test')
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i]
             const [pX, pY, sig, msgHash, nonceTimesGeneratorAddress ] = numbers.map(hexToBN)
             let addr = tests[i].pop()
-           /* log("nonceTimesGeneratorAddress", nonceTimesGeneratorAddress ,"\n",
-                addr
-                )*/
             const rEIP55Address = web3.utils.toChecksumAddress(addr)
-            assert(
-                await c.verifySignature.call(
-                    pX,
+            expect(
+                await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig,
-                    msgHash,
+                    sig.toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                ),
+                )).to.equal(true,
                 'failed to verify signature constructed by golang tests'
             )
-            assert(
-                !(await c.verifySignature.call(
-                    pX,
+            expect(
+                !await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig.add(bigOne),
-                    msgHash,
+                    sig.add(gasUsage).toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                )),
+                )).to.equal(true,
                 'failed to reject bad signature'
             )
         }
     })
 
     it('Should verify ethschnorr_test signatures', async () => {
-        const tests = require('../../files/ethschnorr_test')
+        const tests = require('../../test_data/ethschnorr_test')
         for (let i = 0; i < Math.min(1, tests.length); i++) {
             const numbers = tests[i].slice(0, tests[i].length - 1)
             const [pX, pY, sig, msgHash, nonceTimesGeneratorAddress ] = numbers.map(hexToBN)
@@ -177,24 +185,26 @@ contract('SchnorrSECP256K1', async accounts => {
             //     addr
             // )
             const rEIP55Address = web3.utils.toChecksumAddress(addr)
-            assert(
-                await c.verifySignature.call(
-                    pX,
+            expect(
+                await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig,
-                    msgHash,
+                    sig.toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                ),
+                )).to.equal(true,
                 'failed to verify signature constructed by golang tests'
             )
-            assert(
-                !(await c.verifySignature.call(
-                    pX,
+            expect(
+                !await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig.add(bigOne),
-                    msgHash,
+                    sig.add(gasUsage).toString(),
+                    msgHash.toString(),
                     rEIP55Address
-                )),
+                )).to.equal(true,
                 'failed to reject bad signature'
             )
         }
@@ -208,8 +218,8 @@ contract('SchnorrSECP256K1', async accounts => {
 		signature.CommitmentPublicAddress
 * */
     it('Should verify mixed signatures', async () => {
-        let testsNew = require('../../files/ethschnorr_test')
-        let dssTest = require('../../files/ethdss_test')
+        let testsNew = require('../../test_data/ethschnorr_test')
+        let dssTest = require('../../test_data/ethdss_test')
         testsNew.push(dssTest)
         for (let i = 0; i < Math.min(1, testsNew.length); i++) {
             const numbersNew = testsNew[i].slice(0, testsNew[i].length - 1)
@@ -220,26 +230,38 @@ contract('SchnorrSECP256K1', async accounts => {
             )
             const rEIP55AddressNew = web3.utils.toChecksumAddress(addrNew)
             log("rEIP55Address", rEIP55AddressNew)
-            assert(
-                await c.verifySignature.call(
-                    pX,
+            expect(
+                await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig,
-                    msgHash,
+                    sig.toString(),
+                    msgHash.toString(),
                     rEIP55AddressNew
-                ),
-                'failed to verify signature constructed by golang tests'
-            )
-            assert(
-                !(await c.verifySignature.call(
-                    pX,
+                )).to.equal(true,
+                'failed to verify signature constructed by golang tests')
+            expect(
+                !await schnorrSECP256K1.verifySignature.call(
+                    gasUsage,
+                    pX.toString(),
                     pY.isEven() ? 0 : 1,
-                    sig.add(bigOne),
-                    msgHash,
+                    sig.add(gasUsage).toString(),
+                    msgHash.toString(),
                     rEIP55AddressNew
-                )),
-                'failed to reject bad signature'
-            )
+                )).to.equal(true,
+                'failed to reject bad signature')
         }
     })
 })
+
+
+
+// async function checkSignature (s) =>  {
+//  return   schnorrSECP256K1.verifySignature.call(
+//         gasUsage,
+//         publicKey[0].toString(),
+//         pubKeyYParity.toString(),
+//         s.toString(),
+//         msgHash.toString(),
+//         kTimesGAddress)
+// }

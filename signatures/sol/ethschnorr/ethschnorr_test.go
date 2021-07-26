@@ -35,7 +35,7 @@ func file() string {
 	_, file, _, _ := runtime.Caller(0)
 	fname = path.Base(file)
 	fname = fname[:len(fname)-3]
-	return "../../../files/" + fname + ".js"
+	return "../../../test_data/" + fname + ".js"
 }
 
 func printTest(t *testing.T, file2 *os.File, msg *big.Int,
